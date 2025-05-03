@@ -1,11 +1,26 @@
 import { APPLICATION_API_END_POINT } from './constant';
 import { authenticatedRequest } from './authUtils';
+import { addAuthHeader } from './tokenUtils';
+import axios from 'axios';
 
 // Apply for a job
 export const applyForJob = async (jobId) => {
   try {
-    const data = await authenticatedRequest('get', `${APPLICATION_API_END_POINT}/apply/${jobId}`);
-    return data;
+    // First try with authenticatedRequest
+    try {
+      const data = await authenticatedRequest('get', `${APPLICATION_API_END_POINT}/apply/${jobId}`);
+      return data;
+    } catch (authError) {
+      console.log('Trying with direct axios call with auth header');
+      // If that fails, try with direct axios call with manually added auth header
+      const config = addAuthHeader({
+        method: 'get',
+        url: `${APPLICATION_API_END_POINT}/apply/${jobId}`,
+        withCredentials: true
+      });
+      const response = await axios(config);
+      return response.data;
+    }
   } catch (error) {
     console.error('Error applying for job:', error);
     throw error;

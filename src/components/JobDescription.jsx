@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { getJobById } from '@/utils/jobApi';
 import { applyForJob } from '@/utils/applicationApi';
+import { storeTokenInRedux } from '@/utils/tokenUtils';
 
 const JobDescription = () => {
     const {singleJob} = useSelector(store => store.job);
@@ -19,9 +20,13 @@ const JobDescription = () => {
     const params = useParams();
     const jobId = params.id;
     const dispatch = useDispatch();
+    const navigate = useNavigate();
 
     const applyJobHandler = async () => {
         try {
+            // Make sure token is stored in Redux before making the request
+            storeTokenInRedux(dispatch);
+
             const data = await applyForJob(jobId);
 
             if(data.success){

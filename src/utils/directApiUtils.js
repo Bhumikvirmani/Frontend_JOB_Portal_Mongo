@@ -1,6 +1,21 @@
 import axios from 'axios';
 import { USER_API_END_POINT, JOB_API_END_POINT, COMPANY_API_END_POINT, APPLICATION_API_END_POINT } from './constant';
 
+// Function to get token from localStorage
+const getTokenFromStorage = () => {
+  try {
+    const persistRoot = localStorage.getItem('persist:root');
+    if (!persistRoot) return null;
+
+    const parsedRoot = JSON.parse(persistRoot);
+    const auth = JSON.parse(parsedRoot.auth || '{}');
+    return auth.token || null;
+  } catch (error) {
+    console.error('Error getting token from storage:', error);
+    return null;
+  }
+};
+
 // Create a custom axios instance with credentials enabled
 const api = axios.create({
   withCredentials: true,
@@ -8,6 +23,18 @@ const api = axios.create({
     'Content-Type': 'application/json'
   }
 });
+
+// Add request interceptor to include Authorization header if available
+api.interceptors.request.use(
+  (config) => {
+    const token = getTokenFromStorage();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 // User API functions
 export const userApi = {
@@ -20,7 +47,7 @@ export const userApi = {
       throw error;
     }
   },
-  
+
   register: async (formData) => {
     try {
       const response = await api.post(`${USER_API_END_POINT}/register`, formData, {
@@ -32,7 +59,7 @@ export const userApi = {
       throw error;
     }
   },
-  
+
   logout: async () => {
     try {
       const response = await api.get(`${USER_API_END_POINT}/logout`);
@@ -42,7 +69,7 @@ export const userApi = {
       throw error;
     }
   },
-  
+
   updateProfile: async (formData) => {
     try {
       const response = await api.post(`${USER_API_END_POINT}/profile/update`, formData, {
@@ -74,7 +101,7 @@ export const jobApi = {
       throw error;
     }
   },
-  
+
   getJobById: async (jobId) => {
     try {
       // Try with authentication first
@@ -91,7 +118,7 @@ export const jobApi = {
       throw error;
     }
   },
-  
+
   getAdminJobs: async () => {
     try {
       const response = await api.get(`${JOB_API_END_POINT}/getadminjobs`);
@@ -101,7 +128,7 @@ export const jobApi = {
       throw error;
     }
   },
-  
+
   postJob: async (jobData) => {
     try {
       const response = await api.post(`${JOB_API_END_POINT}/post`, jobData);
@@ -124,7 +151,7 @@ export const companyApi = {
       throw error;
     }
   },
-  
+
   getCompanyById: async (companyId) => {
     try {
       const response = await api.get(`${COMPANY_API_END_POINT}/get/${companyId}`);
@@ -134,7 +161,7 @@ export const companyApi = {
       throw error;
     }
   },
-  
+
   registerCompany: async (companyData) => {
     try {
       const response = await api.post(`${COMPANY_API_END_POINT}/register`, companyData);
@@ -144,7 +171,7 @@ export const companyApi = {
       throw error;
     }
   },
-  
+
   updateCompany: async (companyId, formData) => {
     try {
       const response = await api.put(`${COMPANY_API_END_POINT}/update/${companyId}`, formData, {
@@ -169,7 +196,7 @@ export const applicationApi = {
       throw error;
     }
   },
-  
+
   getAppliedJobs: async () => {
     try {
       const response = await api.get(`${APPLICATION_API_END_POINT}/get`);
@@ -179,7 +206,7 @@ export const applicationApi = {
       throw error;
     }
   },
-  
+
   getJobApplicants: async (jobId) => {
     try {
       const response = await api.get(`${APPLICATION_API_END_POINT}/${jobId}/applicants`);
@@ -189,7 +216,7 @@ export const applicationApi = {
       throw error;
     }
   },
-  
+
   updateApplicationStatus: async (applicationId, statusData) => {
     try {
       const response = await api.post(`${APPLICATION_API_END_POINT}/status/${applicationId}/update`, statusData);
@@ -206,7 +233,7 @@ export const isUserLoggedIn = () => {
   try {
     const persistRoot = localStorage.getItem('persist:root');
     if (!persistRoot) return false;
-    
+
     const parsedRoot = JSON.parse(persistRoot);
     const auth = JSON.parse(parsedRoot.auth || '{}');
     return !!auth.user;
@@ -221,7 +248,7 @@ export const getCurrentUser = () => {
   try {
     const persistRoot = localStorage.getItem('persist:root');
     if (!persistRoot) return null;
-    
+
     const parsedRoot = JSON.parse(persistRoot);
     const auth = JSON.parse(parsedRoot.auth || '{}');
     return auth.user;

@@ -9,7 +9,8 @@ import axios from 'axios'
 import { USER_API_END_POINT } from '@/utils/constant'
 import { toast } from 'sonner'
 import { useDispatch, useSelector } from 'react-redux'
-import { setLoading, setUser } from '@/redux/authSlice'
+import { setLoading, setUser, setToken } from '@/redux/authSlice'
+import { storeTokenInRedux } from '@/utils/tokenUtils'
 import { Loader2 } from 'lucide-react'
 
 const Login = () => {
@@ -52,6 +53,8 @@ const Login = () => {
             });
             if (res.data.success) {
                 dispatch(setUser(res.data.user));
+                // Store token in Redux from cookies
+                storeTokenInRedux(dispatch);
                 navigate("/");
                 toast.success(res.data.message);
             }

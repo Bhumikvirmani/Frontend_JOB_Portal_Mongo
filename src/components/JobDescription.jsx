@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import { Badge } from './ui/badge'
 import { Button } from './ui/button'
-import { useParams } from 'react-router-dom';
-import axios from 'axios';
-import { APPLICATION_API_END_POINT, JOB_API_END_POINT } from '@/utils/constant';
+import { useParams, useNavigate } from 'react-router-dom';
 import { setSingleJob } from '@/redux/jobSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { getJobById } from '@/utils/jobApi';
+import { applyForJob } from '@/utils/applicationApi';
 
 const JobDescription = () => {
     const {singleJob} = useSelector(store => store.job);
@@ -22,18 +22,24 @@ const JobDescription = () => {
 
     const applyJobHandler = async () => {
         try {
-            const res = await axios.get(`${APPLICATION_API_END_POINT}/apply/${jobId}`, {withCredentials:true});
+            const data = await applyForJob(jobId);
 
-            if(res.data.success){
+            if(data.success){
                 setIsApplied(true); // Update the local state
                 const updatedSingleJob = {...singleJob, applications:[...singleJob.applications,{applicant:user?._id}]}
                 dispatch(setSingleJob(updatedSingleJob)); // helps us to real time UI update
-                toast.success(res.data.message);
-
+                toast.success(data.message);
             }
         } catch (error) {
             console.log(error);
-            toast.error(error.response.data.message);
+            if (error.response && error.response.status === 401) {
+                toast.error("Please log in to apply for this job");
+                navigate('/login');
+            } else if (error.response && error.response.data) {
+                toast.error(error.response.data.message);
+            } else {
+                toast.error("Failed to apply for job. Please try again.");
+            }
         }
     }
 
@@ -41,17 +47,15 @@ const JobDescription = () => {
         const fetchSingleJob = async () => {
             setLoading(true);
             try {
-                // Try to get job details - this will work for both authenticated and non-authenticated users
-                const res = await axios.get(`${JOB_API_END_POINT}/get/${jobId}`, {
-                    withCredentials: true
-                });
+                // Use our new API utility that handles both authenticated and non-authenticated requests
+                const data = await getJobById(jobId);
 
-                if(res.data.success){
-                    dispatch(setSingleJob(res.data.job));
+                if(data.success){
+                    dispatch(setSingleJob(data.job));
 
                     // Check if user is logged in and applications exist before checking application status
-                    if (user && res.data.job.applications) {
-                        setIsApplied(res.data.job.applications.some(
+                    if (user && data.job.applications) {
+                        setIsApplied(data.job.applications.some(
                             application => application.applicant === user._id
                         ));
                     } else {

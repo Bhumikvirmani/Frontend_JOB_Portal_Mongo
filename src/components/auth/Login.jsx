@@ -54,27 +54,34 @@ const Login = () => {
             if (res.data.success) {
                 dispatch(setUser(res.data.user));
 
-                // Extract token from cookies
-                const cookies = document.cookie.split(';');
-                let token = null;
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.startsWith('token=')) {
-                        token = cookie.substring('token='.length, cookie.length);
-                        break;
-                    }
-                }
-
-                // Store token in Redux
-                if (token) {
-                    console.log("Token found in cookies after login, storing in Redux");
-                    dispatch(setToken(token));
+                // First try to get token from response body
+                if (res.data.token) {
+                    console.log("Token found in response body, storing in Redux");
+                    dispatch(setToken(res.data.token));
                 } else {
-                    console.log("No token found in cookies after login");
-                    // As a fallback, create a manual token from user ID
-                    const manualToken = `manual_${res.data.user._id}_${Date.now()}`;
-                    console.log("Created manual token:", manualToken);
-                    dispatch(setToken(manualToken));
+                    // Extract token from cookies as fallback
+                    console.log("No token in response body, checking cookies");
+                    const cookies = document.cookie.split(';');
+                    let token = null;
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.startsWith('token=')) {
+                            token = cookie.substring('token='.length, cookie.length);
+                            break;
+                        }
+                    }
+
+                    // Store token in Redux
+                    if (token) {
+                        console.log("Token found in cookies after login, storing in Redux");
+                        dispatch(setToken(token));
+                    } else {
+                        console.log("No token found in cookies or response after login");
+                        // As a fallback, create a manual token from user ID
+                        const manualToken = `manual_${res.data.user._id}_${Date.now()}`;
+                        console.log("Created manual token:", manualToken);
+                        dispatch(setToken(manualToken));
+                    }
                 }
 
                 navigate("/");

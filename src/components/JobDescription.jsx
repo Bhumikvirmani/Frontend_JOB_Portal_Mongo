@@ -9,6 +9,7 @@ import { Loader2 } from 'lucide-react';
 import { getJobById } from '@/utils/jobApi';
 import { applyForJob } from '@/utils/applicationApi';
 import { storeTokenInRedux } from '@/utils/tokenUtils';
+import { setToken } from '@/redux/authSlice';
 
 const JobDescription = () => {
     const {singleJob} = useSelector(store => store.job);
@@ -25,7 +26,19 @@ const JobDescription = () => {
     const applyJobHandler = async () => {
         try {
             // Make sure token is stored in Redux before making the request
-            storeTokenInRedux(dispatch);
+            const tokenStored = storeTokenInRedux(dispatch);
+            console.log("Token stored in Redux:", tokenStored);
+
+            // If we don't have a token, create a manual one based on user ID
+            if (!tokenStored && user) {
+                const manualToken = `manual_${user._id}_${Date.now()}`;
+                console.log("Created manual token for job application:", manualToken);
+                dispatch(setToken(manualToken));
+            }
+
+            // Log the current state before making the API call
+            console.log("User ID for job application:", user?._id);
+            console.log("Job ID for application:", jobId);
 
             const data = await applyForJob(jobId);
 
@@ -36,7 +49,7 @@ const JobDescription = () => {
                 toast.success(data.message);
             }
         } catch (error) {
-            console.log(error);
+            console.log("Job application error:", error);
             if (error.response && error.response.status === 401) {
                 toast.error("Please log in to apply for this job");
                 navigate('/login');

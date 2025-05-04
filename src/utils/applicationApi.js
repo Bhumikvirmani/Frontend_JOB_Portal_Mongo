@@ -6,40 +6,35 @@ import axios from 'axios';
 // Apply for a job
 export const applyForJob = async (jobId) => {
   try {
-    // Get token from any available source
-    const token = getToken();
-    console.log("Token available for job application:", !!token);
+    // First, try to get a fresh token
+    console.log("Fetching fresh token for job application");
+    const token = await getToken(true); // Force refresh
+    console.log("Fresh token available for job application:", !!token);
 
-    // First try with authenticatedRequest
+    if (!token) {
+      throw new Error("Could not obtain a valid authentication token");
+    }
+
+    // Try with direct axios call with the fresh token
+    const config = await addAuthHeader({
+      method: 'get',
+      url: `${APPLICATION_API_END_POINT}/apply/${jobId}`,
+      withCredentials: true
+    });
+
     try {
-      const data = await authenticatedRequest('get', `${APPLICATION_API_END_POINT}/apply/${jobId}`);
-      return data;
-    } catch (authError) {
-      console.log('First attempt failed, trying with direct axios call with auth header');
+      console.log("Making request with fresh token");
+      const response = await axios(config);
+      return response.data;
+    } catch (headerError) {
+      console.log('Request with fresh token failed, trying with token in query parameter');
 
-      // If that fails, try with direct axios call with manually added auth header
-      const config = addAuthHeader({
-        method: 'get',
-        url: `${APPLICATION_API_END_POINT}/apply/${jobId}`,
+      // As a last resort, try with token in query parameter
+      console.log(`Making request with token in query parameter: ${token.substring(0, 10)}...`);
+      const response = await axios.get(`${APPLICATION_API_END_POINT}/apply/${jobId}?token=${token}`, {
         withCredentials: true
       });
-
-      try {
-        const response = await axios(config);
-        return response.data;
-      } catch (headerError) {
-        console.log('Second attempt failed, trying with token in query parameter');
-
-        // As a last resort, try with token in query parameter
-        if (token) {
-          const response = await axios.get(`${APPLICATION_API_END_POINT}/apply/${jobId}?token=${token}`, {
-            withCredentials: true
-          });
-          return response.data;
-        } else {
-          throw new Error("No authentication token available");
-        }
-      }
+      return response.data;
     }
   } catch (error) {
     console.error('Error applying for job:', error);

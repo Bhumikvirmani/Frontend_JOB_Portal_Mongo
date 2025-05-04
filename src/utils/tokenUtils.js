@@ -1,4 +1,6 @@
 import { setToken } from '../redux/authSlice';
+import axios from 'axios';
+import { USER_API_END_POINT } from './constant';
 
 // Function to extract token from cookies
 export const extractTokenFromCookies = () => {
@@ -27,8 +29,58 @@ export const extractTokenFromStorage = () => {
   }
 };
 
+// Function to get the current user ID from localStorage
+export const getCurrentUserId = () => {
+  try {
+    const persistRoot = localStorage.getItem('persist:root');
+    if (!persistRoot) return null;
+
+    const parsedRoot = JSON.parse(persistRoot);
+    const auth = JSON.parse(parsedRoot.auth || '{}');
+    return auth.user ? JSON.parse(auth.user)._id : null;
+  } catch (error) {
+    console.error('Error getting user ID from storage:', error);
+    return null;
+  }
+};
+
+// Function to fetch a fresh token from the backend
+export const fetchFreshToken = async () => {
+  const userId = getCurrentUserId();
+  if (!userId) {
+    console.log("No user ID available to fetch token");
+    return null;
+  }
+
+  try {
+    console.log(`Fetching fresh token for user ${userId}`);
+    const response = await axios.get(`${USER_API_END_POINT}/generate-token/${userId}`, {
+      withCredentials: true
+    });
+
+    if (response.data.success && response.data.token) {
+      console.log("Successfully fetched fresh token from backend");
+      return response.data.token;
+    }
+
+    console.log("Token fetch response did not contain a token");
+    return null;
+  } catch (error) {
+    console.error("Error fetching fresh token:", error);
+    return null;
+  }
+};
+
 // Function to get token from any available source
-export const getToken = () => {
+export const getToken = async (forceRefresh = false) => {
+  // If forceRefresh is true, fetch a fresh token
+  if (forceRefresh) {
+    const freshToken = await fetchFreshToken();
+    if (freshToken) {
+      return freshToken;
+    }
+  }
+
   // First try cookies
   const cookieToken = extractTokenFromCookies();
   if (cookieToken) {
@@ -43,23 +95,40 @@ export const getToken = () => {
     return storageToken;
   }
 
-  console.log("No token found in any source");
+  // If no token found, try to fetch a fresh one
+  if (!forceRefresh) {
+    console.log("No token found in any source, fetching fresh token");
+    const freshToken = await fetchFreshToken();
+    if (freshToken) {
+      return freshToken;
+    }
+  }
+
+  console.log("No token found in any source and failed to fetch fresh token");
   return null;
 };
 
 // Function to store token in Redux
-export const storeTokenInRedux = (dispatch) => {
-  const token = getToken();
+export const storeTokenInRedux = async (dispatch) => {
+  const token = await getToken();
   if (token) {
     dispatch(setToken(token));
     return true;
   }
+
+  // If no token found, try to fetch a fresh one
+  const freshToken = await fetchFreshToken();
+  if (freshToken) {
+    dispatch(setToken(freshToken));
+    return true;
+  }
+
   return false;
 };
 
 // Function to manually set Authorization header for a specific request
-export const addAuthHeader = (config) => {
-  const token = getToken();
+export const addAuthHeader = async (config) => {
+  const token = await getToken();
   if (token) {
     if (!config.headers) {
       config.headers = {};

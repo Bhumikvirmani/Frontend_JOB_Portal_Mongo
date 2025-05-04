@@ -1,25 +1,27 @@
 import { setAllAppliedJobs } from "@/redux/jobSlice";
-import { APPLICATION_API_END_POINT } from "@/utils/constant";
-import axios from "axios"
+import { getAppliedJobs } from "@/utils/applicationApi";
 import { useEffect } from "react"
 import { useDispatch } from "react-redux"
 
 const useGetAppliedJobs = () => {
     const dispatch = useDispatch();
 
-    useEffect(()=>{
+    useEffect(() => {
         const fetchAppliedJobs = async () => {
             try {
-                const res = await axios.get(`${APPLICATION_API_END_POINT}/get`, {withCredentials:true});
-                console.log(res.data);
-                if(res.data.success){
-                    dispatch(setAllAppliedJobs(res.data.application));
+                // Use our enhanced getAppliedJobs function that handles token refresh
+                const data = await getAppliedJobs();
+                console.log("Applied jobs data:", data);
+
+                if (data && data.success) {
+                    dispatch(setAllAppliedJobs(data.application));
                 }
             } catch (error) {
-                console.log(error);
+                console.log("Error fetching applied jobs:", error);
             }
         }
         fetchAppliedJobs();
-    },[])
+    }, [dispatch])
 };
+
 export default useGetAppliedJobs;

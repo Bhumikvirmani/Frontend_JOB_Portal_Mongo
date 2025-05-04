@@ -1,11 +1,10 @@
 import React, { useEffect } from 'react'
 import Navbar from '../shared/Navbar'
 import ApplicantsTable from './ApplicantsTable'
-import axios from 'axios';
-import { APPLICATION_API_END_POINT } from '@/utils/constant';
 import { useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { setAllApplicants } from '@/redux/applicationSlice';
+import { getJobApplicants } from '@/utils/applicationApi';
 
 const Applicants = () => {
     const params = useParams();
@@ -15,14 +14,19 @@ const Applicants = () => {
     useEffect(() => {
         const fetchAllApplicants = async () => {
             try {
-                const res = await axios.get(`${APPLICATION_API_END_POINT}/${params.id}/applicants`, { withCredentials: true });
-                dispatch(setAllApplicants(res.data.job));
+                // Use our enhanced getJobApplicants function that handles token refresh
+                const data = await getJobApplicants(params.id);
+                console.log("Job applicants data:", data);
+
+                if (data && data.job) {
+                    dispatch(setAllApplicants(data.job));
+                }
             } catch (error) {
-                console.log(error);
+                console.log("Error fetching job applicants:", error);
             }
         }
         fetchAllApplicants();
-    }, []);
+    }, [params.id, dispatch]);
     return (
         <div>
             <Navbar />

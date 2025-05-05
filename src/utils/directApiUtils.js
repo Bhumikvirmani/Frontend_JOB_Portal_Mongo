@@ -266,50 +266,51 @@ export const jobApi = {
       }
 
       // Format the data to match backend expectations
+      // The backend controller expects 'companyId' in the request
       const formattedJobData = {
-        title: jobData.title,
-        description: jobData.description,
-        requirements: jobData.requirements,
-        salary: jobData.salary,
-        location: jobData.location,
-        jobType: jobData.jobType,
-        experience: jobData.experience,
-        position: jobData.position,
-        companyId: jobData.companyId
+        title: jobData.title || "",
+        description: jobData.description || "",
+        requirements: jobData.requirements || "",
+        salary: jobData.salary || "0",
+        location: jobData.location || "",
+        jobType: jobData.jobType || "",
+        experience: jobData.experience || "0",
+        position: jobData.position || "0",
+        companyId: jobData.companyId || ""
       };
 
       // Log the request details
       console.log(`Making POST request to ${JOB_API_END_POINT}/post with data:`, JSON.stringify(formattedJobData));
 
-      // Try with the api instance first
+      // Try with a direct axios call first with explicit content type and token
+      const token = getTokenFromMultipleSources();
+      if (!token) {
+        console.error("No authentication token available");
+        throw new Error("Authentication required. Please log in again.");
+      }
+
+      console.log("Using direct axios POST call with token");
       try {
-        const response = await api.post(`${JOB_API_END_POINT}/post`, formattedJobData);
+        const response = await axios({
+          method: 'post',
+          url: `${JOB_API_END_POINT}/post`,
+          data: formattedJobData,
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
         console.log("Job posted successfully:", response.data);
         return response.data;
-      } catch (apiError) {
-        console.error('API instance failed, trying direct axios call:', apiError);
+      } catch (directError) {
+        console.error('Direct axios call failed:', directError);
 
-        // If the api instance fails, try a direct axios call with token
-        const token = getTokenFromMultipleSources();
-        if (!token) {
-          console.error("No authentication token available");
-          throw new Error("Authentication required. Please log in again.");
-        }
-
-        console.log("Using direct axios call with token");
-        const fallbackResponse = await axios.post(
-          `${JOB_API_END_POINT}/post`,
-          formattedJobData,
-          {
-            withCredentials: true,
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`
-            }
-          }
-        );
-
-        console.log("Job posted successfully with fallback method:", fallbackResponse.data);
+        // If direct call fails, try with the api instance
+        console.log("Trying with api instance as fallback");
+        const fallbackResponse = await api.post(`${JOB_API_END_POINT}/post`, formattedJobData);
+        console.log("Job posted successfully with api instance:", fallbackResponse.data);
         return fallbackResponse.data;
       }
     } catch (error) {
@@ -324,6 +325,12 @@ export const jobApi = {
       };
 
       console.error("Error details:", errorDetails);
+
+      // Check if it's a network error
+      if (error.message && error.message.includes('Network Error')) {
+        console.error("Network error detected. Server might be down or CORS issue.");
+      }
+
       throw error;
     }
   }

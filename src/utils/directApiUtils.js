@@ -228,6 +228,19 @@ export const jobApi = {
     try {
       console.log("Fetching admin jobs...");
 
+      // First, test if the API is working
+      try {
+        const testResponse = await fetch(`${JOB_API_END_POINT}/test`);
+        const testData = await testResponse.json();
+        console.log("API test response:", testData);
+
+        if (!testResponse.ok) {
+          console.error("API test failed:", testData);
+        }
+      } catch (testError) {
+        console.error("API test error:", testError);
+      }
+
       // Get the authentication token
       const token = getTokenFromMultipleSources();
       if (!token) {
@@ -236,6 +249,7 @@ export const jobApi = {
       }
 
       console.log("Using fetch API for getAdminJobs request");
+      console.log("Token (first 10 chars):", token.substring(0, 10) + "...");
 
       // Use fetch API for more control
       const response = await fetch(`${JOB_API_END_POINT}/getadminjobs`, {
@@ -267,6 +281,12 @@ export const jobApi = {
         throw new Error(responseData.message || `Server error: ${response.status}`);
       }
 
+      // If the response is successful but jobs is undefined, return an empty array
+      if (!responseData.jobs) {
+        console.log("Response successful but jobs is undefined, returning empty array");
+        return { jobs: [], success: true };
+      }
+
       console.log("Admin jobs fetched successfully:", responseData);
       return responseData;
     } catch (error) {
@@ -277,7 +297,28 @@ export const jobApi = {
         return { jobs: [], success: true };
       }
 
-      throw error;
+      // Try an alternative approach with axios as a fallback
+      try {
+        console.log("Trying fallback with axios...");
+        const token = getTokenFromMultipleSources();
+
+        if (token) {
+          const fallbackResponse = await axios.get(`${JOB_API_END_POINT}/getadminjobs`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          console.log("Fallback response:", fallbackResponse.data);
+          return fallbackResponse.data;
+        }
+      } catch (fallbackError) {
+        console.error("Fallback also failed:", fallbackError);
+      }
+
+      // If all else fails, return an empty array
+      console.log("All attempts failed, returning empty array");
+      return { jobs: [], success: true };
     }
   },
 

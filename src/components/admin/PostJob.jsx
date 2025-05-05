@@ -34,10 +34,15 @@ const PostJob = () => {
 
     const selectChangeHandler = (value) => {
         console.log("Selected company value:", value);
-        const selectedCompany = companies.find((company) => company.name.toLowerCase() === value);
+
+        // Try to find the company with case-insensitive matching
+        const selectedCompany = companies.find(
+            (company) => company.name.toLowerCase() === value.toLowerCase()
+        );
 
         if (selectedCompany) {
             console.log("Found company:", selectedCompany);
+            // Store the actual MongoDB ID
             setInput({...input, companyId: selectedCompany._id});
         } else {
             console.error("Company not found for value:", value);
@@ -66,24 +71,48 @@ const PostJob = () => {
             // Log the input data for debugging
             console.log("Submitting job with data:", input);
 
-            // Make sure companyId is properly set
-            const selectedCompany = companies.find(c => c.name.toLowerCase() === input.companyId);
-            if (selectedCompany) {
-                // Use the actual company ID instead of the name
-                const jobData = {
-                    ...input,
-                    companyId: selectedCompany._id
-                };
+            // Check if companyId is already a valid MongoDB ID (24 hex chars)
+            const isValidMongoId = /^[0-9a-fA-F]{24}$/.test(input.companyId);
 
-                console.log("Submitting job with corrected data:", jobData);
-                const data = await jobApi.postJob(jobData);
+            if (isValidMongoId) {
+                // companyId is already a valid MongoDB ID, use it directly
+                console.log("Using existing valid company ID:", input.companyId);
+                const data = await jobApi.postJob(input);
 
                 if(data.success){
                     toast.success(data.message);
                     navigate("/admin/jobs");
                 }
             } else {
-                toast.error("Selected company not found. Please try again.");
+                // companyId might be a company name, try to find the actual ID
+                console.log("Looking for company with name (case insensitive):", input.companyId);
+
+                // Try different case variations for more robust matching
+                const selectedCompany = companies.find(c =>
+                    c.name.toLowerCase() === input.companyId.toLowerCase() ||
+                    c.name === input.companyId ||
+                    c._id === input.companyId
+                );
+
+                if (selectedCompany) {
+                    // Use the actual company ID instead of the name
+                    const jobData = {
+                        ...input,
+                        companyId: selectedCompany._id
+                    };
+
+                    console.log("Submitting job with corrected data:", jobData);
+                    const data = await jobApi.postJob(jobData);
+
+                    if(data.success){
+                        toast.success(data.message);
+                        navigate("/admin/jobs");
+                    }
+                } else {
+                    console.error("Could not find company with name:", input.companyId);
+                    console.error("Available companies:", companies);
+                    toast.error("Selected company not found. Please try again.");
+                }
             }
         } catch (error) {
             console.error('Error posting job:', error);
@@ -190,7 +219,7 @@ const PostJob = () => {
                                             {
                                                 companies.map((company) => {
                                                     return (
-                                                        <SelectItem key={company._id} value={company?.name?.toLowerCase()}>{company.name}</SelectItem>
+                                                        <SelectItem key={company._id} value={company?.name}>{company.name}</SelectItem>
                                                     )
                                                 })
                                             }

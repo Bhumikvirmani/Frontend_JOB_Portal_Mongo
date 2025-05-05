@@ -52,6 +52,14 @@ const Login = () => {
                 if (data.token) {
                     console.log("Token found in response body, storing in Redux");
                     dispatch(setToken(data.token));
+
+                    // Also store token in localStorage directly for extra redundancy
+                    try {
+                        localStorage.setItem('authToken', data.token);
+                        console.log("Token also stored directly in localStorage for redundancy");
+                    } catch (storageError) {
+                        console.error("Failed to store token in localStorage:", storageError);
+                    }
                 } else {
                     console.log("No token in response body, checking cookies");
                     // Extract token from cookies as fallback
@@ -69,12 +77,28 @@ const Login = () => {
                     if (token) {
                         console.log("Token found in cookies after login, storing in Redux");
                         dispatch(setToken(token));
+
+                        // Also store token in localStorage directly for extra redundancy
+                        try {
+                            localStorage.setItem('authToken', token);
+                            console.log("Token from cookies also stored directly in localStorage for redundancy");
+                        } catch (storageError) {
+                            console.error("Failed to store token in localStorage:", storageError);
+                        }
                     } else {
                         console.log("No token found in cookies or response after login");
                         // As a fallback, create a manual token from user ID
                         const manualToken = `manual_${data.user._id}_${Date.now()}`;
                         console.log("Created manual token:", manualToken);
                         dispatch(setToken(manualToken));
+
+                        // Also store manual token in localStorage directly for extra redundancy
+                        try {
+                            localStorage.setItem('authToken', manualToken);
+                            console.log("Manual token also stored directly in localStorage for redundancy");
+                        } catch (storageError) {
+                            console.error("Failed to store manual token in localStorage:", storageError);
+                        }
                     }
                 }
 

@@ -23,7 +23,7 @@ const TestJobPost = () => {
         salary: "50000",
         location: "Test Location",
         jobType: "Full-time",
-        experience: "1-2",
+        experience: "1-2", // This is now a string in the model
         position: "1",
         companyId: "6818eef1b845dcc67fa76391" // Replace with a valid company ID
       };

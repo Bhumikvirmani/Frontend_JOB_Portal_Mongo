@@ -245,13 +245,23 @@ const PostJob = () => {
                         </div>
                         <div>
                             <Label>Experience Level</Label>
-                            <Input
-                                type="text"
+                            <Select
                                 name="experience"
-                                value={input.experience}
-                                onChange={changeEventHandler}
-                                className="focus-visible:ring-offset-0 focus-visible:ring-0 my-1"
-                            />
+                                onValueChange={(value) => setInput({...input, experience: value})}
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select Experience Level" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectGroup>
+                                        <SelectItem value="0-1">0-1 years</SelectItem>
+                                        <SelectItem value="1-2">1-2 years</SelectItem>
+                                        <SelectItem value="2-5">2-5 years</SelectItem>
+                                        <SelectItem value="5-10">5-10 years</SelectItem>
+                                        <SelectItem value="10+">10+ years</SelectItem>
+                                    </SelectGroup>
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div>
                             <Label>No of Postion</Label>

@@ -172,20 +172,69 @@ export const jobApi = {
 
   getAdminJobs: async () => {
     try {
+      console.log("Fetching admin jobs...");
       const response = await api.get(`${JOB_API_END_POINT}/getadminjobs`);
+      console.log("Admin jobs fetched successfully:", response.data);
       return response.data;
     } catch (error) {
       console.error('Get admin jobs error:', error);
+
+      // If we get a 401, try to make the request with a direct axios call and token in query param
+      if (error.response && error.response.status === 401) {
+        console.log("Trying alternative method for fetching admin jobs...");
+        try {
+          const token = getTokenFromMultipleSources();
+          if (token) {
+            const fallbackResponse = await axios.get(`${JOB_API_END_POINT}/getadminjobs?token=${token}`, {
+              withCredentials: true,
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            console.log("Admin jobs fetched successfully with fallback method:", fallbackResponse.data);
+            return fallbackResponse.data;
+          }
+        } catch (fallbackError) {
+          console.error("Fallback method also failed:", fallbackError);
+        }
+      }
+
       throw error;
     }
   },
 
   postJob: async (jobData) => {
     try {
+      console.log("Posting job with data:", jobData);
       const response = await api.post(`${JOB_API_END_POINT}/post`, jobData);
+      console.log("Job posted successfully:", response.data);
       return response.data;
     } catch (error) {
       console.error('Post job error:', error);
+
+      // If we get a 401, try to make the request with a direct axios call and token in query param
+      if (error.response && error.response.status === 401) {
+        console.log("Trying alternative method for posting job...");
+        try {
+          const token = getTokenFromMultipleSources();
+          if (token) {
+            const fallbackResponse = await axios.post(
+              `${JOB_API_END_POINT}/post?token=${token}`,
+              jobData,
+              {
+                withCredentials: true,
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${token}`
+                }
+              }
+            );
+            console.log("Job posted successfully with fallback method:", fallbackResponse.data);
+            return fallbackResponse.data;
+          }
+        } catch (fallbackError) {
+          console.error("Fallback method also failed:", fallbackError);
+        }
+      }
+
       throw error;
     }
   }
@@ -344,40 +393,131 @@ export const companyApi = {
 export const applicationApi = {
   applyForJob: async (jobId) => {
     try {
+      console.log(`Applying for job with ID: ${jobId}...`);
       const response = await api.get(`${APPLICATION_API_END_POINT}/apply/${jobId}`);
+      console.log("Job application successful:", response.data);
       return response.data;
     } catch (error) {
       console.error('Apply for job error:', error);
+
+      // If we get a 401, try to make the request with a direct axios call and token in query param
+      if (error.response && error.response.status === 401) {
+        console.log("Trying alternative method for applying to job...");
+        try {
+          const token = getTokenFromMultipleSources();
+          if (token) {
+            const fallbackResponse = await axios.get(`${APPLICATION_API_END_POINT}/apply/${jobId}?token=${token}`, {
+              withCredentials: true,
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            console.log("Job application successful with fallback method:", fallbackResponse.data);
+            return fallbackResponse.data;
+          }
+        } catch (fallbackError) {
+          console.error("Fallback method also failed:", fallbackError);
+        }
+      }
+
       throw error;
     }
   },
 
   getAppliedJobs: async () => {
     try {
+      console.log("Fetching applied jobs...");
       const response = await api.get(`${APPLICATION_API_END_POINT}/get`);
+      console.log("Applied jobs fetched successfully:", response.data);
       return response.data;
     } catch (error) {
       console.error('Get applied jobs error:', error);
+
+      // If we get a 401, try to make the request with a direct axios call and token in query param
+      if (error.response && error.response.status === 401) {
+        console.log("Trying alternative method for fetching applied jobs...");
+        try {
+          const token = getTokenFromMultipleSources();
+          if (token) {
+            const fallbackResponse = await axios.get(`${APPLICATION_API_END_POINT}/get?token=${token}`, {
+              withCredentials: true,
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            console.log("Applied jobs fetched successfully with fallback method:", fallbackResponse.data);
+            return fallbackResponse.data;
+          }
+        } catch (fallbackError) {
+          console.error("Fallback method also failed:", fallbackError);
+        }
+      }
+
       throw error;
     }
   },
 
   getJobApplicants: async (jobId) => {
     try {
+      console.log(`Fetching applicants for job with ID: ${jobId}...`);
       const response = await api.get(`${APPLICATION_API_END_POINT}/${jobId}/applicants`);
+      console.log("Job applicants fetched successfully:", response.data);
       return response.data;
     } catch (error) {
       console.error('Get job applicants error:', error);
+
+      // If we get a 401, try to make the request with a direct axios call and token in query param
+      if (error.response && error.response.status === 401) {
+        console.log("Trying alternative method for fetching job applicants...");
+        try {
+          const token = getTokenFromMultipleSources();
+          if (token) {
+            const fallbackResponse = await axios.get(`${APPLICATION_API_END_POINT}/${jobId}/applicants?token=${token}`, {
+              withCredentials: true,
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            console.log("Job applicants fetched successfully with fallback method:", fallbackResponse.data);
+            return fallbackResponse.data;
+          }
+        } catch (fallbackError) {
+          console.error("Fallback method also failed:", fallbackError);
+        }
+      }
+
       throw error;
     }
   },
 
   updateApplicationStatus: async (applicationId, statusData) => {
     try {
+      console.log(`Updating application status for ID: ${applicationId}...`);
       const response = await api.post(`${APPLICATION_API_END_POINT}/status/${applicationId}/update`, statusData);
+      console.log("Application status updated successfully:", response.data);
       return response.data;
     } catch (error) {
       console.error('Update application status error:', error);
+
+      // If we get a 401, try to make the request with a direct axios call and token in query param
+      if (error.response && error.response.status === 401) {
+        console.log("Trying alternative method for updating application status...");
+        try {
+          const token = getTokenFromMultipleSources();
+          if (token) {
+            const fallbackResponse = await axios.post(
+              `${APPLICATION_API_END_POINT}/status/${applicationId}/update?token=${token}`,
+              statusData,
+              {
+                withCredentials: true,
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${token}`
+                }
+              }
+            );
+            console.log("Application status updated successfully with fallback method:", fallbackResponse.data);
+            return fallbackResponse.data;
+          }
+        } catch (fallbackError) {
+          console.error("Fallback method also failed:", fallbackError);
+        }
+      }
+
       throw error;
     }
   }

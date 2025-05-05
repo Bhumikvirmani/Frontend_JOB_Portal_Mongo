@@ -33,30 +33,61 @@ const PostJob = () => {
     };
 
     const selectChangeHandler = (value) => {
-        const selectedCompany = companies.find((company)=> company.name.toLowerCase() === value);
-        setInput({...input, companyId:selectedCompany._id});
+        console.log("Selected company value:", value);
+        const selectedCompany = companies.find((company) => company.name.toLowerCase() === value);
+
+        if (selectedCompany) {
+            console.log("Found company:", selectedCompany);
+            setInput({...input, companyId: selectedCompany._id});
+        } else {
+            console.error("Company not found for value:", value);
+            // Store the name temporarily, we'll resolve it during submission
+            setInput({...input, companyId: value});
+        }
     };
 
     const submitHandler = async (e) => {
         e.preventDefault();
 
         // Validate required fields
-        if (!input.title || !input.companyId) {
-            toast.error("Job title and company are required");
+        if (!input.title) {
+            toast.error("Job title is required");
+            return;
+        }
+
+        if (!input.companyId) {
+            toast.error("Please select a company");
             return;
         }
 
         try {
             setLoading(true);
-            const data = await jobApi.postJob(input);
 
-            if(data.success){
-                toast.success(data.message);
-                navigate("/admin/jobs");
+            // Log the input data for debugging
+            console.log("Submitting job with data:", input);
+
+            // Make sure companyId is properly set
+            const selectedCompany = companies.find(c => c.name.toLowerCase() === input.companyId);
+            if (selectedCompany) {
+                // Use the actual company ID instead of the name
+                const jobData = {
+                    ...input,
+                    companyId: selectedCompany._id
+                };
+
+                console.log("Submitting job with corrected data:", jobData);
+                const data = await jobApi.postJob(jobData);
+
+                if(data.success){
+                    toast.success(data.message);
+                    navigate("/admin/jobs");
+                }
+            } else {
+                toast.error("Selected company not found. Please try again.");
             }
         } catch (error) {
             console.error('Error posting job:', error);
-            toast.error(error.response?.data?.message || 'Failed to post job');
+            toast.error(error.response?.data?.message || error.message || 'Failed to post job');
         } finally{
             setLoading(false);
         }

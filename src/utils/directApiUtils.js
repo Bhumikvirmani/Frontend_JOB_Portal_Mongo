@@ -70,11 +70,28 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
       console.log(`Added Authorization header with token: ${token.substring(0, 10)}...`);
 
-      // As a fallback for some environments, also add token as a query parameter
-      const url = new URL(config.url, window.location.origin);
-      url.searchParams.append('token', token);
-      config.url = url.toString();
-      console.log(`Also added token as query parameter to URL: ${config.url}`);
+      // Don't add token as query parameter for POST/PUT requests as it can cause issues
+      // Only add for GET requests if needed
+      if (config.method === 'get' || !config.method) {
+        try {
+          // Check if the URL is absolute or relative
+          const isAbsoluteUrl = config.url.startsWith('http://') || config.url.startsWith('https://');
+
+          if (isAbsoluteUrl) {
+            // For absolute URLs, use the URL constructor
+            const url = new URL(config.url);
+            if (!url.searchParams.has('token')) {
+              url.searchParams.append('token', token);
+              config.url = url.toString();
+              console.log(`Added token as query parameter to GET URL: ${config.url}`);
+            }
+          }
+        } catch (urlError) {
+          console.error("Error adding token to URL:", urlError);
+        }
+      } else {
+        console.log(`Not adding token as query parameter for ${config.method?.toUpperCase()} request to avoid issues`);
+      }
     } else {
       console.log("No token available for request");
     }
@@ -204,20 +221,31 @@ export const jobApi = {
   postJob: async (jobData) => {
     try {
       console.log("Posting job with data:", jobData);
+
+      // Ensure we have a valid companyId
+      if (!jobData.companyId) {
+        console.error("Missing companyId in job data");
+        throw new Error("Company ID is required");
+      }
+
+      // Log the request details
+      console.log(`Making POST request to ${JOB_API_END_POINT}/post with data:`, JSON.stringify(jobData));
+
       const response = await api.post(`${JOB_API_END_POINT}/post`, jobData);
       console.log("Job posted successfully:", response.data);
       return response.data;
     } catch (error) {
       console.error('Post job error:', error);
 
-      // If we get a 401, try to make the request with a direct axios call and token in query param
+      // If we get a 401, try to make the request with a direct axios call
       if (error.response && error.response.status === 401) {
         console.log("Trying alternative method for posting job...");
         try {
           const token = getTokenFromMultipleSources();
           if (token) {
+            // Don't add token to URL for POST requests
             const fallbackResponse = await axios.post(
-              `${JOB_API_END_POINT}/post?token=${token}`,
+              `${JOB_API_END_POINT}/post`,
               jobData,
               {
                 withCredentials: true,
@@ -232,6 +260,7 @@ export const jobApi = {
           }
         } catch (fallbackError) {
           console.error("Fallback method also failed:", fallbackError);
+          console.error("Fallback error details:", fallbackError.response?.data || fallbackError.message);
         }
       }
 
@@ -541,11 +570,35 @@ export const isUserLoggedIn = () => {
 // Function to get current user from localStorage
 export const getCurrentUser = () => {
   try {
+    // First try direct localStorage item
+    const directUser = localStorage.getItem('currentUser');
+    if (directUser) {
+      console.log("Found user in direct localStorage item");
+      return directUser;
+    }
+
+    // Then try Redux persist storage
     const persistRoot = localStorage.getItem('persist:root');
-    if (!persistRoot) return null;
+    if (!persistRoot) {
+      console.log("No persist:root found in localStorage");
+      return null;
+    }
 
     const parsedRoot = JSON.parse(persistRoot);
     const auth = JSON.parse(parsedRoot.auth || '{}');
+
+    if (!auth.user) {
+      console.log("No user found in auth object");
+      return null;
+    }
+
+    // Store in direct localStorage for future use
+    try {
+      localStorage.setItem('currentUser', auth.user);
+    } catch (storageError) {
+      console.error("Failed to store user in localStorage:", storageError);
+    }
+
     return auth.user;
   } catch (error) {
     console.error('Error getting current user:', error);

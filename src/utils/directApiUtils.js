@@ -227,28 +227,54 @@ export const jobApi = {
   getAdminJobs: async () => {
     try {
       console.log("Fetching admin jobs...");
-      const response = await api.get(`${JOB_API_END_POINT}/getadminjobs`);
-      console.log("Admin jobs fetched successfully:", response.data);
-      return response.data;
+
+      // Get the authentication token
+      const token = getTokenFromMultipleSources();
+      if (!token) {
+        console.error("No authentication token available");
+        throw new Error("Authentication required. Please log in again.");
+      }
+
+      console.log("Using fetch API for getAdminJobs request");
+
+      // Use fetch API for more control
+      const response = await fetch(`${JOB_API_END_POINT}/getadminjobs`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        credentials: 'include'
+      });
+
+      // Log response details for debugging
+      console.log("Response status:", response.status);
+      console.log("Response headers:", Object.fromEntries([...response.headers]));
+
+      // Parse the response
+      const responseData = await response.json();
+      console.log("Response data:", responseData);
+
+      // Check if the request was successful
+      if (!response.ok) {
+        // If we get a 404 with "Jobs not found" message, return an empty jobs array
+        if (response.status === 404 && responseData.message === "Jobs not found.") {
+          console.log("No jobs found for this admin, returning empty array");
+          return { jobs: [], success: true };
+        }
+
+        console.error(`Server returned ${response.status}: ${response.statusText}`);
+        throw new Error(responseData.message || `Server error: ${response.status}`);
+      }
+
+      console.log("Admin jobs fetched successfully:", responseData);
+      return responseData;
     } catch (error) {
       console.error('Get admin jobs error:', error);
 
-      // If we get a 401, try to make the request with a direct axios call and token in query param
-      if (error.response && error.response.status === 401) {
-        console.log("Trying alternative method for fetching admin jobs...");
-        try {
-          const token = getTokenFromMultipleSources();
-          if (token) {
-            const fallbackResponse = await axios.get(`${JOB_API_END_POINT}/getadminjobs?token=${token}`, {
-              withCredentials: true,
-              headers: { Authorization: `Bearer ${token}` }
-            });
-            console.log("Admin jobs fetched successfully with fallback method:", fallbackResponse.data);
-            return fallbackResponse.data;
-          }
-        } catch (fallbackError) {
-          console.error("Fallback method also failed:", fallbackError);
-        }
+      // If the error is just that no jobs were found, return an empty array
+      if (error.message === "Jobs not found.") {
+        return { jobs: [], success: true };
       }
 
       throw error;

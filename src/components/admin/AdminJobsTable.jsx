@@ -13,14 +13,31 @@ const AdminJobsTable = () => {
     const navigate = useNavigate();
 
     useEffect(()=>{
-        console.log('called');
+        console.log('AdminJobsTable filtering jobs');
+
+        // Check if allAdminJobs is an array and not empty
+        if (!allAdminJobs || !Array.isArray(allAdminJobs)) {
+            console.log('No admin jobs available or not in array format');
+            setFilterJobs([]);
+            return;
+        }
+
+        console.log(`Filtering ${allAdminJobs.length} admin jobs with search text: "${searchJobByText}"`);
+
         const filteredJobs = allAdminJobs.filter((job)=>{
             if(!searchJobByText){
                 return true;
             };
-            return job?.title?.toLowerCase().includes(searchJobByText.toLowerCase()) || job?.company?.name.toLowerCase().includes(searchJobByText.toLowerCase());
 
+            // Safely check properties that might be undefined
+            const title = job?.title?.toLowerCase() || '';
+            const companyName = job?.company?.name?.toLowerCase() || '';
+
+            return title.includes(searchJobByText.toLowerCase()) ||
+                   companyName.includes(searchJobByText.toLowerCase());
         });
+
+        console.log(`Found ${filteredJobs.length} jobs after filtering`);
         setFilterJobs(filteredJobs);
     },[allAdminJobs,searchJobByText])
     return (
@@ -36,12 +53,12 @@ const AdminJobsTable = () => {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {
-                        filterJobs?.map((job) => (
+                    {filterJobs && filterJobs.length > 0 ? (
+                        filterJobs.map((job) => (
                             <tr key={job._id}>
                                 <TableCell>{job?.company?.name}</TableCell>
                                 <TableCell>{job?.title}</TableCell>
-                                <TableCell>{job?.createdAt.split("T")[0]}</TableCell>
+                                <TableCell>{job?.createdAt?.split("T")[0]}</TableCell>
                                 <TableCell className="text-right cursor-pointer">
                                     <Popover>
                                         <PopoverTrigger><MoreHorizontal /></PopoverTrigger>
@@ -58,9 +75,14 @@ const AdminJobsTable = () => {
                                     </Popover>
                                 </TableCell>
                             </tr>
-
                         ))
-                    }
+                    ) : (
+                        <tr>
+                            <TableCell colSpan={4} className="text-center py-8">
+                                <p className="text-gray-500">No jobs found. Create your first job by clicking the "New Jobs" button above.</p>
+                            </TableCell>
+                        </tr>
+                    )}
                 </TableBody>
             </Table>
         </div>

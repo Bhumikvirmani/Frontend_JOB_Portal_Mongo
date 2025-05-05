@@ -143,13 +143,23 @@ const PostJob = () => {
             }
 
             console.log("Submitting job with final data:", jobDataToSubmit);
-            const data = await jobApi.postJob(jobDataToSubmit);
 
-            if(data.success){
-                toast.success(data.message);
-                navigate("/admin/jobs");
-            } else {
-                toast.error(data.message || "Failed to post job");
+            try {
+                // Call our improved postJob function
+                const data = await jobApi.postJob(jobDataToSubmit);
+
+                console.log("Job posting response:", data);
+
+                if(data.success){
+                    toast.success(data.message || "Job posted successfully!");
+                    navigate("/admin/jobs");
+                } else {
+                    toast.error(data.message || "Failed to post job");
+                }
+            } catch (apiError) {
+                console.error("API call failed:", apiError);
+                toast.error(apiError.message || "Failed to post job. See console for details.");
+                throw apiError; // Re-throw to be caught by the outer catch block
             }
         } catch (error) {
             console.error('Error posting job:', error);

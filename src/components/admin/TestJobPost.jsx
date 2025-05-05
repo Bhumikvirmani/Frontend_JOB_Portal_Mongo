@@ -29,34 +29,63 @@ const TestJobPost = () => {
       };
 
       // Get token from localStorage
-      const token = localStorage.getItem('authToken');
-      
+      let token = localStorage.getItem('authToken');
+
+      // If no direct token, try to get it from Redux persist storage
+      if (!token) {
+        try {
+          const persistRoot = localStorage.getItem('persist:root');
+          if (persistRoot) {
+            const parsedRoot = JSON.parse(persistRoot);
+            const auth = JSON.parse(parsedRoot.auth || '{}');
+            token = auth.token;
+            console.log("Using token from Redux storage");
+          }
+        } catch (error) {
+          console.error("Error extracting token from Redux storage:", error);
+        }
+      }
+
       if (!token) {
         setError("No authentication token found. Please log in first.");
         setLoading(false);
         return;
       }
 
-      // Make direct axios POST request
-      const response = await axios({
-        method: 'post',
-        url: 'https://backend-jobportal-mongo.onrender.com/api/v1/job/post',
-        data: jobData,
-        withCredentials: true,
+      console.log("Using token:", token.substring(0, 10) + "...");
+      console.log("Sending job data:", JSON.stringify(jobData));
+
+      // Make direct fetch POST request
+      const response = await fetch('https://backend-jobportal-mongo.onrender.com/api/v1/job/post', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        }
+        },
+        credentials: 'include',
+        body: JSON.stringify(jobData)
       });
 
-      setResponse(response.data);
+      // Parse the response
+      const responseData = await response.json();
+
+      // Log the full response for debugging
+      console.log("Response status:", response.status);
+      console.log("Response headers:", Object.fromEntries([...response.headers]));
+      console.log("Response data:", responseData);
+
+      // Check if the request was successful
+      if (!response.ok) {
+        throw new Error(responseData.message || `Server error: ${response.status}`);
+      }
+
+      setResponse(responseData);
       toast.success("Test job post successful!");
     } catch (error) {
       console.error("Test job post error:", error);
       setError({
-        message: error.response?.data?.message || error.message,
-        status: error.response?.status,
-        data: error.response?.data
+        message: error.message,
+        stack: error.stack
       });
       toast.error("Test job post failed. See console for details.");
     } finally {
@@ -67,15 +96,15 @@ const TestJobPost = () => {
   return (
     <div className="p-4 border rounded-md shadow-md">
       <h2 className="text-xl font-bold mb-4">Test Job Post API</h2>
-      
-      <Button 
-        onClick={testJobPost} 
+
+      <Button
+        onClick={testJobPost}
         disabled={loading}
         className="mb-4"
       >
         {loading ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             Testing...
           </>
         ) : (

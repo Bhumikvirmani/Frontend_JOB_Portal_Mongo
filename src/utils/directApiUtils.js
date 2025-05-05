@@ -266,7 +266,6 @@ export const jobApi = {
       }
 
       // Format the data to match backend expectations
-      // The backend controller expects 'companyId' in the request
       const formattedJobData = {
         title: jobData.title || "",
         description: jobData.description || "",
@@ -282,37 +281,38 @@ export const jobApi = {
       // Log the request details
       console.log(`Making POST request to ${JOB_API_END_POINT}/post with data:`, JSON.stringify(formattedJobData));
 
-      // Try with a direct axios call first with explicit content type and token
+      // Get the authentication token
       const token = getTokenFromMultipleSources();
       if (!token) {
         console.error("No authentication token available");
         throw new Error("Authentication required. Please log in again.");
       }
 
-      console.log("Using direct axios POST call with token");
-      try {
-        const response = await axios({
-          method: 'post',
-          url: `${JOB_API_END_POINT}/post`,
-          data: formattedJobData,
-          withCredentials: true,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        });
+      console.log("Using direct fetch API for POST request");
 
-        console.log("Job posted successfully:", response.data);
-        return response.data;
-      } catch (directError) {
-        console.error('Direct axios call failed:', directError);
+      // Use fetch API for more control
+      const response = await fetch(`${JOB_API_END_POINT}/post`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        credentials: 'include',
+        body: JSON.stringify(formattedJobData)
+      });
 
-        // If direct call fails, try with the api instance
-        console.log("Trying with api instance as fallback");
-        const fallbackResponse = await api.post(`${JOB_API_END_POINT}/post`, formattedJobData);
-        console.log("Job posted successfully with api instance:", fallbackResponse.data);
-        return fallbackResponse.data;
+      // Parse the response
+      const responseData = await response.json();
+
+      // Check if the request was successful
+      if (!response.ok) {
+        console.error(`Server returned ${response.status}: ${response.statusText}`);
+        console.error("Response data:", responseData);
+        throw new Error(responseData.message || `Server error: ${response.status}`);
       }
+
+      console.log("Job posted successfully:", responseData);
+      return responseData;
     } catch (error) {
       console.error('Post job error:', error);
 

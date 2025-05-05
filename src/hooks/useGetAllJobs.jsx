@@ -1,37 +1,37 @@
 import { setAllJobs } from '@/redux/jobSlice'
-import { JOB_API_END_POINT } from '@/utils/constant'
-import axios from 'axios'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+import { jobApi } from '@/utils/directApiUtils'
 
 const useGetAllJobs = () => {
     const dispatch = useDispatch();
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
     const {searchedQuery} = useSelector(store=>store.job);
-    useEffect(()=>{
+
+    useEffect(() => {
         const fetchAllJobs = async () => {
             try {
-                // Try to get jobs with authentication first
-                const res = await axios.get(`${JOB_API_END_POINT}/get?keyword=${searchedQuery}`,{withCredentials:true});
-                if(res.data.success){
-                    dispatch(setAllJobs(res.data.jobs));
+                setLoading(true);
+                setError(null);
+                const data = await jobApi.getAllJobs(searchedQuery);
+
+                if(data.success){
+                    dispatch(setAllJobs(data.jobs));
                 }
             } catch (error) {
-                console.log(error);
-                // If authentication fails, try without authentication
-                try {
-                    const res = await axios.get(`${JOB_API_END_POINT}/get?keyword=${searchedQuery}`);
-                    if(res.data.success){
-                        dispatch(setAllJobs(res.data.jobs));
-                    }
-                } catch (fallbackError) {
-                    console.log("Fallback error:", fallbackError);
-                    // Set empty jobs array to avoid errors
-                    dispatch(setAllJobs([]));
-                }
+                console.error('Error fetching jobs:', error);
+                setError('Failed to load jobs');
+                // Set empty jobs array to avoid errors
+                dispatch(setAllJobs([]));
+            } finally {
+                setLoading(false);
             }
         }
         fetchAllJobs();
-    },[])
+    }, [searchedQuery, dispatch])
+
+    return { loading, error };
 }
 
 export default useGetAllJobs

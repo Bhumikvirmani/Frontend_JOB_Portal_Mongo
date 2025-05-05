@@ -5,11 +5,10 @@ import { Input } from '../ui/input'
 import { Button } from '../ui/button'
 import { useSelector } from 'react-redux'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
-import axios from 'axios'
-import { JOB_API_END_POINT } from '@/utils/constant'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
+import { jobApi } from '@/utils/directApiUtils'
 
 const companyArray = [];
 
@@ -40,20 +39,24 @@ const PostJob = () => {
 
     const submitHandler = async (e) => {
         e.preventDefault();
+
+        // Validate required fields
+        if (!input.title || !input.companyId) {
+            toast.error("Job title and company are required");
+            return;
+        }
+
         try {
             setLoading(true);
-            const res = await axios.post(`${JOB_API_END_POINT}/post`, input,{
-                headers:{
-                    'Content-Type':'application/json'
-                },
-                withCredentials:true
-            });
-            if(res.data.success){
-                toast.success(res.data.message);
+            const data = await jobApi.postJob(input);
+
+            if(data.success){
+                toast.success(data.message);
                 navigate("/admin/jobs");
             }
         } catch (error) {
-            toast.error(error.response.data.message);
+            console.error('Error posting job:', error);
+            toast.error(error.response?.data?.message || 'Failed to post job');
         } finally{
             setLoading(false);
         }
@@ -156,7 +159,7 @@ const PostJob = () => {
                                             {
                                                 companies.map((company) => {
                                                     return (
-                                                        <SelectItem value={company?.name?.toLowerCase()}>{company.name}</SelectItem>
+                                                        <SelectItem key={company._id} value={company?.name?.toLowerCase()}>{company.name}</SelectItem>
                                                     )
                                                 })
                                             }
@@ -166,7 +169,7 @@ const PostJob = () => {
                                 </Select>
                             )
                         }
-                    </div> 
+                    </div>
                     {
                         loading ? <Button className="w-full my-4"> <Loader2 className='mr-2 h-4 w-4 animate-spin' /> Please wait </Button> : <Button type="submit" className="w-full my-4">Post New Job</Button>
                     }

@@ -1,28 +1,32 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '../ui/table'
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, Loader2 } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
-import { APPLICATION_API_END_POINT } from '@/utils/constant';
-import axios from 'axios';
+import { applicationApi } from '@/utils/directApiUtils';
 
 const shortlistingStatus = ["Accepted", "Rejected"];
 
 const ApplicantsTable = () => {
     const { applicants } = useSelector(store => store.application);
+    const [loadingStatus, setLoadingStatus] = useState(null);
 
     const statusHandler = async (status, id) => {
-        console.log('called');
+        if (loadingStatus === id) return; // Prevent multiple clicks
+
         try {
-            axios.defaults.withCredentials = true;
-            const res = await axios.post(`${APPLICATION_API_END_POINT}/status/${id}/update`, { status });
-            console.log(res);
-            if (res.data.success) {
-                toast.success(res.data.message);
+            setLoadingStatus(id);
+            const data = await applicationApi.updateApplicationStatus(id, { status });
+
+            if (data.success) {
+                toast.success(data.message);
             }
         } catch (error) {
-            toast.error(error.response.data.message);
+            console.error('Error updating application status:', error);
+            toast.error(error.response?.data?.message || 'Failed to update status');
+        } finally {
+            setLoadingStatus(null);
         }
     }
 
@@ -62,7 +66,14 @@ const ApplicantsTable = () => {
                                             {
                                                 shortlistingStatus.map((status, index) => {
                                                     return (
-                                                        <div onClick={() => statusHandler(status, item?._id)} key={index} className='flex w-fit items-center my-2 cursor-pointer'>
+                                                        <div
+                                                            onClick={() => statusHandler(status, item?._id)}
+                                                            key={index}
+                                                            className='flex w-fit items-center my-2 cursor-pointer'
+                                                        >
+                                                            {loadingStatus === item?._id ? (
+                                                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                                            ) : null}
                                                             <span>{status}</span>
                                                         </div>
                                                     )

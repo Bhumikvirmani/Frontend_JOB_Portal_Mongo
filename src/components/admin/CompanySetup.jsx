@@ -4,12 +4,11 @@ import { Button } from '../ui/button'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { Label } from '../ui/label'
 import { Input } from '../ui/input'
-import axios from 'axios'
-import { COMPANY_API_END_POINT } from '@/utils/constant'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useSelector } from 'react-redux'
 import useGetCompanyById from '@/hooks/useGetCompanyById'
+import { companyApi } from '@/utils/directApiUtils'
 
 const CompanySetup = () => {
     const params = useParams();
@@ -36,6 +35,12 @@ const CompanySetup = () => {
 
     const submitHandler = async (e) => {
         e.preventDefault();
+
+        if (!input.name) {
+            toast.error("Company name is required");
+            return;
+        }
+
         const formData = new FormData();
         formData.append("name", input.name);
         formData.append("description", input.description);
@@ -44,34 +49,33 @@ const CompanySetup = () => {
         if (input.file) {
             formData.append("file", input.file);
         }
+
         try {
             setLoading(true);
-            const res = await axios.put(`${COMPANY_API_END_POINT}/update/${params.id}`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                },
-                withCredentials: true
-            });
-            if (res.data.success) {
-                toast.success(res.data.message);
+            const data = await companyApi.updateCompany(params.id, formData);
+
+            if (data.success) {
+                toast.success(data.message);
                 navigate("/admin/companies");
             }
         } catch (error) {
-            console.log(error);
-            toast.error(error.response.data.message);
+            console.error('Error updating company:', error);
+            toast.error(error.response?.data?.message || 'Failed to update company');
         } finally {
             setLoading(false);
         }
     }
 
     useEffect(() => {
-        setInput({
-            name: singleCompany.name || "",
-            description: singleCompany.description || "",
-            website: singleCompany.website || "",
-            location: singleCompany.location || "",
-            file: singleCompany.file || null
-        })
+        if (singleCompany) {
+            setInput({
+                name: singleCompany.name || "",
+                description: singleCompany.description || "",
+                website: singleCompany.website || "",
+                location: singleCompany.location || "",
+                file: singleCompany.file || null
+            });
+        }
     },[singleCompany]);
 
     return (

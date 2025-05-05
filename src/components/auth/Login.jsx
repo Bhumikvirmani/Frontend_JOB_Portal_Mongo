@@ -5,13 +5,11 @@ import { Input } from '../ui/input'
 import { RadioGroup } from '../ui/radio-group'
 import { Button } from '../ui/button'
 import { Link, useNavigate } from 'react-router-dom'
-import axios from 'axios'
-import { USER_API_END_POINT } from '@/utils/constant'
 import { toast } from 'sonner'
 import { useDispatch, useSelector } from 'react-redux'
 import { setLoading, setUser, setToken } from '@/redux/authSlice'
-import { storeTokenInRedux } from '@/utils/tokenUtils'
 import { Loader2 } from 'lucide-react'
+import { userApi } from '@/utils/directApiUtils'
 
 const Login = () => {
     const [input, setInput] = useState({
@@ -45,22 +43,18 @@ const Login = () => {
 
         try {
             dispatch(setLoading(true));
-            const res = await axios.post(`${USER_API_END_POINT}/login`, input, {
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                withCredentials: true,
-            });
-            if (res.data.success) {
-                dispatch(setUser(res.data.user));
+            const data = await userApi.login(input);
 
-                // First try to get token from response body
-                if (res.data.token) {
+            if (data.success) {
+                dispatch(setUser(data.user));
+
+                // Store token in Redux if available
+                if (data.token) {
                     console.log("Token found in response body, storing in Redux");
-                    dispatch(setToken(res.data.token));
+                    dispatch(setToken(data.token));
                 } else {
-                    // Extract token from cookies as fallback
                     console.log("No token in response body, checking cookies");
+                    // Extract token from cookies as fallback
                     const cookies = document.cookie.split(';');
                     let token = null;
                     for (let i = 0; i < cookies.length; i++) {
@@ -78,17 +72,17 @@ const Login = () => {
                     } else {
                         console.log("No token found in cookies or response after login");
                         // As a fallback, create a manual token from user ID
-                        const manualToken = `manual_${res.data.user._id}_${Date.now()}`;
+                        const manualToken = `manual_${data.user._id}_${Date.now()}`;
                         console.log("Created manual token:", manualToken);
                         dispatch(setToken(manualToken));
                     }
                 }
 
                 navigate("/");
-                toast.success(res.data.message);
+                toast.success(data.message);
             }
         } catch (error) {
-            console.log(error);
+            console.error('Login error:', error);
             if (error.response && error.response.data) {
                 toast.error(error.response.data.message);
             } else {

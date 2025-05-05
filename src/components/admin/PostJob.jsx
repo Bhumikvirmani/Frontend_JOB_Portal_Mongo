@@ -60,6 +60,41 @@ const PostJob = () => {
             return;
         }
 
+        if (!input.description) {
+            toast.error("Job description is required");
+            return;
+        }
+
+        if (!input.requirements) {
+            toast.error("Job requirements are required");
+            return;
+        }
+
+        if (!input.salary) {
+            toast.error("Salary is required");
+            return;
+        }
+
+        if (!input.location) {
+            toast.error("Location is required");
+            return;
+        }
+
+        if (!input.jobType) {
+            toast.error("Job type is required");
+            return;
+        }
+
+        if (!input.experience) {
+            toast.error("Experience level is required");
+            return;
+        }
+
+        if (!input.position) {
+            toast.error("Number of positions is required");
+            return;
+        }
+
         if (!input.companyId) {
             toast.error("Please select a company");
             return;
@@ -74,15 +109,12 @@ const PostJob = () => {
             // Check if companyId is already a valid MongoDB ID (24 hex chars)
             const isValidMongoId = /^[0-9a-fA-F]{24}$/.test(input.companyId);
 
+            let jobDataToSubmit;
+
             if (isValidMongoId) {
                 // companyId is already a valid MongoDB ID, use it directly
                 console.log("Using existing valid company ID:", input.companyId);
-                const data = await jobApi.postJob(input);
-
-                if(data.success){
-                    toast.success(data.message);
-                    navigate("/admin/jobs");
-                }
+                jobDataToSubmit = { ...input };
             } else {
                 // companyId might be a company name, try to find the actual ID
                 console.log("Looking for company with name (case insensitive):", input.companyId);
@@ -96,27 +128,40 @@ const PostJob = () => {
 
                 if (selectedCompany) {
                     // Use the actual company ID instead of the name
-                    const jobData = {
+                    jobDataToSubmit = {
                         ...input,
                         companyId: selectedCompany._id
                     };
-
-                    console.log("Submitting job with corrected data:", jobData);
-                    const data = await jobApi.postJob(jobData);
-
-                    if(data.success){
-                        toast.success(data.message);
-                        navigate("/admin/jobs");
-                    }
+                    console.log("Using company ID:", selectedCompany._id);
                 } else {
                     console.error("Could not find company with name:", input.companyId);
                     console.error("Available companies:", companies);
                     toast.error("Selected company not found. Please try again.");
+                    setLoading(false);
+                    return;
                 }
+            }
+
+            console.log("Submitting job with final data:", jobDataToSubmit);
+            const data = await jobApi.postJob(jobDataToSubmit);
+
+            if(data.success){
+                toast.success(data.message);
+                navigate("/admin/jobs");
+            } else {
+                toast.error(data.message || "Failed to post job");
             }
         } catch (error) {
             console.error('Error posting job:', error);
-            toast.error(error.response?.data?.message || error.message || 'Failed to post job');
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to post job';
+            toast.error(errorMessage);
+
+            // Log detailed error information
+            if (error.response) {
+                console.error("Response status:", error.response.status);
+                console.error("Response data:", error.response.data);
+                console.error("Response headers:", error.response.headers);
+            }
         } finally{
             setLoading(false);
         }

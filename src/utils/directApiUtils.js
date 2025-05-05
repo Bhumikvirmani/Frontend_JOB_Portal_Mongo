@@ -65,13 +65,15 @@ api.interceptors.request.use(
   (config) => {
     console.log(`Making ${config.method?.toUpperCase()} request to: ${config.url}`);
 
+    // Ensure we have the latest token for each request
     const token = getTokenFromMultipleSources();
+
     if (token) {
+      // Always add the Authorization header for all requests
       config.headers.Authorization = `Bearer ${token}`;
       console.log(`Added Authorization header with token: ${token.substring(0, 10)}...`);
 
-      // Don't add token as query parameter for POST/PUT requests as it can cause issues
-      // Only add for GET requests if needed
+      // For GET requests, also add token as query parameter as a fallback
       if (config.method === 'get' || !config.method) {
         try {
           // Check if the URL is absolute or relative
@@ -93,13 +95,48 @@ api.interceptors.request.use(
         console.log(`Not adding token as query parameter for ${config.method?.toUpperCase()} request to avoid issues`);
       }
     } else {
-      console.log("No token available for request");
+      console.warn("⚠️ No authentication token available for request. This may cause authorization failures.");
     }
 
     return config;
   },
   (error) => {
     console.error("Request interceptor error:", error);
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor to handle common errors
+api.interceptors.response.use(
+  (response) => {
+    // Successful response
+    return response;
+  },
+  (error) => {
+    // Handle error responses
+    if (error.response) {
+      const { status, data } = error.response;
+
+      console.error(`API Error ${status}:`, data);
+
+      // Handle specific status codes
+      if (status === 401) {
+        console.error("Authentication error. Token may be invalid or expired.");
+      } else if (status === 403) {
+        console.error("Authorization error. User may not have permission for this action.");
+      } else if (status === 404) {
+        console.error("Resource not found. The requested endpoint may not exist.");
+      } else if (status === 500) {
+        console.error("Server error. Please try again later.");
+      }
+    } else if (error.request) {
+      // Request was made but no response received
+      console.error("No response received from server:", error.request);
+    } else {
+      // Error in setting up the request
+      console.error("Error setting up request:", error.message);
+    }
+
     return Promise.reject(error);
   }
 );
@@ -228,42 +265,65 @@ export const jobApi = {
         throw new Error("Company ID is required");
       }
 
-      // Log the request details
-      console.log(`Making POST request to ${JOB_API_END_POINT}/post with data:`, JSON.stringify(jobData));
+      // Format the data to match backend expectations
+      const formattedJobData = {
+        title: jobData.title,
+        description: jobData.description,
+        requirements: jobData.requirements,
+        salary: jobData.salary,
+        location: jobData.location,
+        jobType: jobData.jobType,
+        experience: jobData.experience,
+        position: jobData.position,
+        companyId: jobData.companyId
+      };
 
-      const response = await api.post(`${JOB_API_END_POINT}/post`, jobData);
-      console.log("Job posted successfully:", response.data);
-      return response.data;
+      // Log the request details
+      console.log(`Making POST request to ${JOB_API_END_POINT}/post with data:`, JSON.stringify(formattedJobData));
+
+      // Try with the api instance first
+      try {
+        const response = await api.post(`${JOB_API_END_POINT}/post`, formattedJobData);
+        console.log("Job posted successfully:", response.data);
+        return response.data;
+      } catch (apiError) {
+        console.error('API instance failed, trying direct axios call:', apiError);
+
+        // If the api instance fails, try a direct axios call with token
+        const token = getTokenFromMultipleSources();
+        if (!token) {
+          console.error("No authentication token available");
+          throw new Error("Authentication required. Please log in again.");
+        }
+
+        console.log("Using direct axios call with token");
+        const fallbackResponse = await axios.post(
+          `${JOB_API_END_POINT}/post`,
+          formattedJobData,
+          {
+            withCredentials: true,
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`
+            }
+          }
+        );
+
+        console.log("Job posted successfully with fallback method:", fallbackResponse.data);
+        return fallbackResponse.data;
+      }
     } catch (error) {
       console.error('Post job error:', error);
 
-      // If we get a 401, try to make the request with a direct axios call
-      if (error.response && error.response.status === 401) {
-        console.log("Trying alternative method for posting job...");
-        try {
-          const token = getTokenFromMultipleSources();
-          if (token) {
-            // Don't add token to URL for POST requests
-            const fallbackResponse = await axios.post(
-              `${JOB_API_END_POINT}/post`,
-              jobData,
-              {
-                withCredentials: true,
-                headers: {
-                  'Content-Type': 'application/json',
-                  Authorization: `Bearer ${token}`
-                }
-              }
-            );
-            console.log("Job posted successfully with fallback method:", fallbackResponse.data);
-            return fallbackResponse.data;
-          }
-        } catch (fallbackError) {
-          console.error("Fallback method also failed:", fallbackError);
-          console.error("Fallback error details:", fallbackError.response?.data || fallbackError.message);
-        }
-      }
+      // Provide more detailed error information
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to post job';
+      const errorDetails = {
+        message: errorMessage,
+        status: error.response?.status,
+        data: error.response?.data
+      };
 
+      console.error("Error details:", errorDetails);
       throw error;
     }
   }

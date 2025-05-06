@@ -22,14 +22,21 @@ const AdminJobs = () => {
   return (
     <div>
       <Navbar />
-      <div className='max-w-6xl mx-auto my-10'>
-        <div className='flex items-center justify-between my-5'>
-          <Input
-            className="w-fit"
-            placeholder="Filter by name, role"
-            onChange={(e) => setInput(e.target.value)}
-          />
-          <Button onClick={() => navigate("/admin/jobs/create")}>New Jobs</Button>
+      <div className='max-w-6xl mx-auto my-6 md:my-10 px-4 md:px-6'>
+        <div className='flex flex-col md:flex-row items-start md:items-center justify-between my-5 gap-4'>
+          <div className="w-full md:w-auto">
+            <Input
+              className="w-full md:w-fit"
+              placeholder="Filter by name, role"
+              onChange={(e) => setInput(e.target.value)}
+            />
+          </div>
+          <Button
+            onClick={() => navigate("/admin/jobs/create")}
+            className="w-full md:w-auto"
+          >
+            New Jobs
+          </Button>
         </div>
 
         {loading ? (
@@ -43,7 +50,9 @@ const AdminJobs = () => {
             <p className="mt-2">You can still create new jobs by clicking the "New Jobs" button above.</p>
           </div>
         ) : (
-          <AdminJobsTable />
+          <div className="overflow-x-auto responsive-table">
+            <AdminJobsTable />
+          </div>
         )}
       </div>
     </div>

@@ -41,14 +41,14 @@ const AdminJobsTable = () => {
         setFilterJobs(filteredJobs);
     },[allAdminJobs,searchJobByText])
     return (
-        <div>
-            <Table>
-                <TableCaption>A list of your recent  posted jobs</TableCaption>
+        <div className="w-full">
+            <Table className="min-w-full">
+                <TableCaption>A list of your recently posted jobs</TableCaption>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Company Name</TableHead>
+                        <TableHead className="hidden md:table-cell">Company Name</TableHead>
                         <TableHead>Role</TableHead>
-                        <TableHead>Date</TableHead>
+                        <TableHead className="hidden md:table-cell">Date</TableHead>
                         <TableHead className="text-right">Action</TableHead>
                     </TableRow>
                 </TableHeader>
@@ -56,9 +56,16 @@ const AdminJobsTable = () => {
                     {filterJobs && filterJobs.length > 0 ? (
                         filterJobs.map((job) => (
                             <tr key={job._id}>
-                                <TableCell>{job?.company?.name}</TableCell>
-                                <TableCell>{job?.title}</TableCell>
-                                <TableCell>{job?.createdAt?.split("T")[0]}</TableCell>
+                                <TableCell className="hidden md:table-cell">{job?.company?.name}</TableCell>
+                                <TableCell>
+                                    <div>
+                                        <div>{job?.title}</div>
+                                        <div className="md:hidden text-xs text-gray-500 mt-1">
+                                            {job?.company?.name} • {job?.createdAt?.split("T")[0]}
+                                        </div>
+                                    </div>
+                                </TableCell>
+                                <TableCell className="hidden md:table-cell">{job?.createdAt?.split("T")[0]}</TableCell>
                                 <TableCell className="text-right cursor-pointer">
                                     <Popover>
                                         <PopoverTrigger><MoreHorizontal /></PopoverTrigger>

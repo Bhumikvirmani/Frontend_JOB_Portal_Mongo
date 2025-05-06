@@ -1,0 +1,73 @@
+/* Responsive styles for the Job Portal application */
+
+/* Mobile-first approach */
+@media (max-width: 640px) {
+  /* General styles */
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  /* Form styles */
+  .responsive-form {
+    padding: 1rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .responsive-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Table styles */
+  .responsive-table {
+    overflow-x: auto;
+  }
+
+  /* Navigation styles */
+  .mobile-menu {
+    display: flex !important;
+  }
+
+  .desktop-menu {
+    display: none !important;
+  }
+
+  /* Button styles */
+  .responsive-button-container {
+    flex-direction: column !important;
+    width: 100% !important;
+  }
+
+  .responsive-button {
+    width: 100% !important;
+    margin-top: 0.5rem !important;
+  }
+
+  /* Input styles */
+  .responsive-input {
+    width: 100% !important;
+  }
+}
+
+/* Tablet styles */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .responsive-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* Utility classes */
+.mobile-only {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .mobile-only {
+    display: block;
+  }
+
+  .desktop-only {
+    display: none;
+  }
+}

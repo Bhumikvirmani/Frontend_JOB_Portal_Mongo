@@ -1,0 +1,57 @@
+/* Custom responsive grid styles */
+
+/* Mobile-first approach */
+.responsive-job-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+/* Small screens (tablets) */
+@media (min-width: 640px) {
+  .responsive-job-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Large screens (desktops) */
+@media (min-width: 1024px) {
+  .responsive-job-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Layout for Jobs page */
+.responsive-jobs-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.responsive-filter-card {
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+/* Medium screens and up */
+@media (min-width: 768px) {
+  .responsive-jobs-layout {
+    flex-direction: row;
+  }
+  
+  .responsive-filter-card {
+    width: 20%;
+    margin-bottom: 0;
+  }
+  
+  .responsive-jobs-content {
+    flex: 1;
+    height: 88vh;
+    overflow-y: auto;
+  }
+}
+
+/* Small screens */
+.responsive-jobs-content {
+  height: auto;
+}

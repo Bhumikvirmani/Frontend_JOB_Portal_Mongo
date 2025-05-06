@@ -7,6 +7,19 @@ module.exports = {
     './app/**/*.{js,jsx}',
     './src/**/*.{js,jsx}',
   ],
+  safelist: [
+    'grid-cols-1',
+    'sm:grid-cols-2',
+    'lg:grid-cols-3',
+    'md:flex-row',
+    'flex-col',
+    'md:w-1/5',
+    'w-full',
+    'md:h-[88vh]',
+    'h-auto',
+    'md:mb-0',
+    'mb-4'
+  ],
   prefix: "",
   theme: {
     container: {

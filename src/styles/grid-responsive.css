@@ -38,12 +38,12 @@
   .responsive-jobs-layout {
     flex-direction: row;
   }
-  
+
   .responsive-filter-card {
     width: 20%;
     margin-bottom: 0;
   }
-  
+
   .responsive-jobs-content {
     flex: 1;
     height: 88vh;
@@ -54,4 +54,67 @@
 /* Small screens */
 .responsive-jobs-content {
   height: auto;
+}
+
+/* Hero Section Responsive Styles */
+.responsive-hero-container {
+  text-align: center;
+  padding: 0 1rem;
+}
+
+.responsive-hero-title {
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+}
+
+.responsive-hero-search {
+  width: 100%;
+}
+
+/* Small screens (tablets) */
+@media (min-width: 640px) {
+  .responsive-hero-search {
+    width: 80%;
+  }
+}
+
+/* Medium screens */
+@media (min-width: 768px) {
+  .responsive-hero-container {
+    padding: 0;
+  }
+
+  .responsive-hero-title {
+    font-size: 3rem;
+    line-height: 1;
+  }
+
+  .responsive-hero-search {
+    width: 60%;
+  }
+}
+
+/* Large screens */
+@media (min-width: 1024px) {
+  .responsive-hero-search {
+    width: 40%;
+  }
+}
+
+/* Category Carousel Responsive Styles */
+.responsive-category-carousel {
+  position: relative;
+  padding: 0 1rem;
+}
+
+@media (max-width: 768px) {
+  .responsive-category-carousel button.rounded-full {
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+  }
+
+  .responsive-category-carousel [data-carousel-button] {
+    width: 2rem;
+    height: 2rem;
+  }
 }

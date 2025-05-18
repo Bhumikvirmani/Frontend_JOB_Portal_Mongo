@@ -109,7 +109,7 @@ const Navbar = () => {
         <div className='bg-white shadow-sm'>
             <div className='flex items-center justify-between mx-auto max-w-7xl h-16 px-4 md:px-6'>
                 <div>
-                    <h1 className='text-2xl font-bold'>Job<span className='text-[#F83002]'>Portal</span></h1>
+                    <h1 className='text-2xl font-bold'>Elevate<span className='text-[#F83002]'>Hire</span></h1>
                 </div>
 
                 {/* Mobile menu button */}

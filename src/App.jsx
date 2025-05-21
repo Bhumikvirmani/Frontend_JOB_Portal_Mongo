@@ -50,7 +50,6 @@ const appRouter = createBrowserRouter([
     path: "/test-api",
     element: <TestApiPage />
   },
-  // admin ke liye yha se start hoga
   {
     path:"/admin/companies",
     element: <ProtectedRoute><Companies/></ProtectedRoute>
